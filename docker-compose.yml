@@ -6,12 +6,20 @@ services:
       context: .
     environment:
       - NODE_ENV=development
+      - EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
+      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.137.1
     tty: true
     ports:
+      - "1900:1900"
       - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
       - "5555:5555"
     expose:
+      - "1900"
       - "19000"
+      - "19001"
+      - "19002"
     volumes:
       - .:/home/node/haut-rn
     healthcheck:
