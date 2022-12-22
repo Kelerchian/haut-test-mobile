@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { graphql } from "react-relay";
+import { graphql, useLazyLoadQuery } from "react-relay";
 import { ComparePage } from "screens/Compare";
 import { InAppCamera } from "screens/InAppCamera";
 import { InAppGallery } from "../agents/gallery";
@@ -42,15 +42,25 @@ const styles = StyleSheet.create({
   image: { width: "100%", height: "100%" },
 });
 
+const RelayCallExample = () => {
+  return (
+    <Suspense fallback={<Text>Failed to call network</Text>}>
+      <RelayCallExampleImpl />
+    </Suspense>
+  );
+};
+
+const RelayCallExampleImpl = () => {
+  const data = useLazyLoadQuery(HomeQuery, {}, { fetchPolicy: "network-only" });
+  return <Text>{JSON.stringify(data)}</Text>;
+};
+
 const HomePage = (): JSX.Element => {
   const gallery = InAppGallery.use();
   const [pageMode, setPageMode] = useState<null | "compare" | "capture">(null);
 
-  // const data = useLazyLoadQuery(HomeQuery, {}, { fetchPolicy: "network-only" });
-
   return (
     <>
-      {/* <Text>{JSON.stringify(data)}</Text> */}
       {pageMode === null && (
         <Frame
           menu={
@@ -61,6 +71,7 @@ const HomePage = (): JSX.Element => {
             />
           }
         >
+          <RelayCallExample />
           <GalleryShowcase
             gallery={gallery}
             onTakeAPicture={() => {
