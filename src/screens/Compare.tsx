@@ -1,4 +1,4 @@
-import { Slider } from "@miblanchard/react-native-slider";
+import Slider from "@react-native-community/slider";
 import { CameraCapturedPicture } from "expo-camera";
 import { useMemo, useState } from "react";
 import {
