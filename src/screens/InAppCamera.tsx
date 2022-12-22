@@ -1,4 +1,5 @@
 import { InAppGallery } from "agents/gallery";
+import { Frame, FrameStyles, MenuButton, MenuText } from "components/Frame";
 import { Camera, CameraCapturedPicture, CameraType } from "expo-camera";
 import * as ExpoImageManipulator from "expo-image-manipulator";
 import { FlipType, ImageResult } from "expo-image-manipulator";
@@ -13,6 +14,8 @@ import {
 } from "react-native";
 import { useBackhandler } from "utils/backhandlerHook";
 import { CameraAndPermissionManager } from "../agents/cameraAndPermission";
+import IconCamera from "../icons/IconCamera";
+import IconSuperimpose from "../icons/IconSuperimpose";
 
 const PREFERRED_RATIO = "1:1";
 
@@ -56,7 +59,12 @@ const PermissionDeniedNotice = (props: { onRetry: () => unknown }) => (
       [Explain here why the user needs to approve the permission and for them to
       click the button]
     </Text>
-    <Button title="Request Permission" onPress={() => {}}>
+    <Button
+      title="Request Permission"
+      onPress={() => {
+        props.onRetry();
+      }}
+    >
       Request Permission
     </Button>
   </>
@@ -127,22 +135,31 @@ const CameraOnPhase = (props: {
   }, [ratio]);
 
   return (
-    <View
-      style={{
-        height: "100%",
-        justifyContent: "flex-start",
-        alignItems: "stretch",
-      }}
+    <Frame
+      menu={
+        <>
+          {mirroredLastPhoto && (
+            <MenuButton onPress={() => setSuperimpose(!superimpose)}>
+              <IconSuperimpose style={FrameStyles.menuButtonIcon} />
+              <MenuText>{superimpose ? "On" : "Off"}</MenuText>
+            </MenuButton>
+          )}
+          <MenuButton
+            onPress={async () => {
+              if (!camera) return;
+              props.onPicture(
+                await camera.takePictureAsync({
+                  // Doesn't quite work, at least on my phone
+                  isImageMirror: true,
+                })
+              );
+            }}
+          >
+            <IconCamera style={FrameStyles.menuButtonIcon} />
+          </MenuButton>
+        </>
+      }
     >
-      {mirroredLastPhoto && (
-        <View style={{ zIndex: 3 }}>
-          <Text>You have another photo you can superimpose with:</Text>
-          <Button
-            title={`Toggle Superimpose: ${superimpose ? "On" : "Off"}`}
-            onPress={() => setSuperimpose(!superimpose)}
-          />
-        </View>
-      )}
       <View
         style={{
           ...styles.absoluteFullFrame,
@@ -191,25 +208,10 @@ const CameraOnPhase = (props: {
               left: 0,
               zIndex: 3,
             }}
-          >
-            <Button
-              title="Take Picture"
-              onPress={async () => {
-                if (!camera) return;
-                props.onPicture(
-                  await camera.takePictureAsync({
-                    // Doesn't quite work, at least on my phone
-                    isImageMirror: true,
-                  })
-                );
-              }}
-            >
-              <Text>Take Picture</Text>
-            </Button>
-          </View>
+          ></View>
         </View>
       </View>
-    </View>
+    </Frame>
   );
 };
 
