@@ -1,0 +1,11 @@
+- Note: Expo's Tunnel mode doesn't work quite well for me.
+  - I modified the docker-compose.yml and the package.json to support, LAN mode.
+  - LAN mode with docker requires you to setup several environment variables:
+    - EXPO_DEVTOOLS_LISTEN_ADDRESS: Set to 0.0.0.0
+    - REACT_NATIVE_PACKAGER_HOSTNAME: Set to your IP address in your local network that's connected to your testing device
+  - Said variables can be either defined in docker-compose or locally before running `npm run lan` e.g.:
+    - `export REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.2`
+- Due to the tweaks, let me know if running the app isn't particularly clear or I accidentally mangled Expo's tunnel mode.
+- I assure you that the app is completely-featured, but...
+- Seeing the app you're gonna think "what an atrocious UI design". Please bear with me for some minutes, I only got the chance to start working at Monday and spent 2 days dealing with docker and windows firewall (They aren't exactly a harmonious pair). The naming and the code organization can be better too!
+- Cheers!
