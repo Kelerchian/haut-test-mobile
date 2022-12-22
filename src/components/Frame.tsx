@@ -38,7 +38,7 @@ export const FrameStyles = StyleSheet.create({
 });
 
 export const Frame = (props: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   menu?: React.ReactNode;
 }) => (
   <View style={FrameStyles.frame}>
@@ -49,9 +49,14 @@ export const Frame = (props: {
 
 export const MenuButton = (props: {
   onPress: () => unknown;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  disabled?: boolean;
 }) => (
-  <Pressable style={FrameStyles.menuButton} onPress={props.onPress}>
+  <Pressable
+    disabled={props.disabled}
+    style={{ ...FrameStyles.menuButton, opacity: props.disabled ? 0.2 : 1 }}
+    onPress={props.onPress}
+  >
     {props.children}
   </Pressable>
 );

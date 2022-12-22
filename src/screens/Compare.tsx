@@ -1,16 +1,40 @@
 import Slider from "@react-native-community/slider";
 import { CameraCapturedPicture } from "expo-camera";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Image,
+  ImageSourcePropType,
+  Pressable,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
+  ViewProps,
 } from "react-native";
 import { useBackhandler } from "utils/backhandlerHook";
 import { InAppGallery } from "../agents/gallery";
+import { Frame, FrameStyles, MenuButton, MenuText } from "../components/Frame";
+import IconCompare from "../icons/IconCompare";
+
+type ComparePageControl = ReturnType<typeof useComparePageControl>;
+export const useComparePageControl = () => {
+  const [image1, setImage1] = useState<CameraCapturedPicture | null>(null);
+  const [image2, setImage2] = useState<CameraCapturedPicture | null>(null);
+  const [selection, setSelection] = useState<1 | 2>(1);
+  const [comparing, setComparing] = useState(false);
+
+  return {
+    image1,
+    image2,
+    setImage1,
+    setImage2,
+    setSelection,
+    selection,
+    comparing,
+    setComparing,
+  };
+};
 
 export const ComparePage = ({
   gallery,
@@ -19,112 +43,19 @@ export const ComparePage = ({
   onBack: () => unknown;
   gallery: InAppGallery;
 }) => {
-  const [image1, setImage1] = useState<CameraCapturedPicture | null>(null);
-  const [image2, setImage2] = useState<CameraCapturedPicture | null>(null);
-  const [selection, setSelection] = useState<1 | 2>(1);
-  const [comparing, setComparing] = useState(false);
-
   useBackhandler(onBack);
 
-  const boxSide = useWindowDimensions().width / 4;
-  const styles = useMemo(
-    () =>
-      StyleSheet.create({
-        previewContainer: { height: boxSide, flexDirection: "row" },
-        previewItem: { height: boxSide, width: boxSide },
-        notSelected: { borderWidth: 1, borderStyle: "dotted" },
-        selected: { borderWidth: 1, borderStyle: "solid" },
-        image1: { borderColor: "red" },
-        image2: { borderColor: "orange" },
-        boxedImage: { height: "100%", width: "100%" },
-        gallery: {
-          flexGrow: 1,
-          flexShrink: 1,
-          overflow: "scroll",
-          flexDirection: "row",
-          flexWrap: "wrap",
-        },
-        galleryItem: { width: boxSide, height: boxSide },
-      }),
-    [boxSide]
-  );
+  const comparePageControl = useComparePageControl();
 
-  const image1BorderStyle =
-    (selection === 1 && styles.selected) || styles.notSelected;
-  const image2BorderStyle =
-    (selection === 2 && styles.selected) || styles.notSelected;
+  const { comparing, image1, image2, setComparing } = comparePageControl;
 
   return (
     <>
       {!comparing && (
-        <View>
-          <View style={styles.previewContainer}>
-            <View
-              style={{
-                ...styles.previewItem,
-                ...styles.image1,
-                ...image1BorderStyle,
-              }}
-              onTouchStart={() => setSelection(1)}
-            >
-              {image1 && <Image style={styles.boxedImage} source={image1} />}
-              {!image1 && <Text>Click to select</Text>}
-            </View>
-            <View
-              style={{
-                ...styles.previewItem,
-                ...styles.image2,
-                ...image2BorderStyle,
-              }}
-              onTouchStart={() => setSelection(2)}
-            >
-              {image2 && <Image style={styles.boxedImage} source={image2} />}
-              {!image2 && <Text>Click to select</Text>}
-            </View>
-            <Button
-              title="Compare"
-              disabled={!image1 || !image2}
-              onPress={() => setComparing(true)}
-            >
-              Compare
-            </Button>
-          </View>
-          <View style={styles.gallery}>
-            {gallery.getPhotos().map((photo) => {
-              const photoIsSelectedAsImage1 = photo === image1;
-              const photoIsSelectedAsImage2 = photo === image2;
-
-              const photoFrameStyle = (() => {
-                if (photoIsSelectedAsImage1) {
-                  return { ...styles.image1, ...image1BorderStyle };
-                }
-
-                if (photoIsSelectedAsImage2) {
-                  return { ...styles.image2, ...image2BorderStyle };
-                }
-
-                return {};
-              })();
-
-              return (
-                <View
-                  key={photo.uri}
-                  style={{ ...styles.galleryItem, ...photoFrameStyle }}
-                  onTouchStart={() => {
-                    switch (selection) {
-                      case 1:
-                        return setImage1(photo);
-                      case 2:
-                        return setImage2(photo);
-                    }
-                  }}
-                >
-                  <Image source={photo} style={styles.boxedImage} />
-                </View>
-              );
-            })}
-          </View>
-        </View>
+        <CompareSelection
+          gallery={gallery}
+          comparePageControl={comparePageControl}
+        />
       )}
       {comparing && image1 && image2 && (
         <CompareScreen
@@ -136,6 +67,144 @@ export const ComparePage = ({
         />
       )}
     </>
+  );
+};
+
+const styles = StyleSheet.create({
+  previewContainer: { flexDirection: "column", alignItems: "center" },
+  previewItemList: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 20,
+    padding: 20,
+  },
+  previewItem: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selected: { borderWidth: 3, borderStyle: "solid" },
+  image1: { borderColor: "red" },
+  image2: { borderColor: "orange" },
+  boxedImage: { height: "100%", width: "100%" },
+  gallery: {
+    flexGrow: 1,
+    flexShrink: 1,
+    overflow: "scroll",
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+});
+
+const PreviewItem = (props: {
+  selected?: boolean;
+  style?: ViewProps["style"];
+  onPress?: () => unknown;
+  image: ImageSourcePropType | null;
+}) => (
+  <Pressable
+    style={[styles.previewItem, props.selected && styles.selected, props.style]}
+    onTouchStart={props.onPress}
+  >
+    {props.image && <Image style={styles.boxedImage} source={props.image} />}
+    {!props.image && <Text>Choose</Text>}
+  </Pressable>
+);
+
+const CompareSelection = ({
+  gallery,
+  comparePageControl,
+}: {
+  gallery: InAppGallery;
+  comparePageControl: ComparePageControl;
+}) => {
+  const {
+    image1,
+    image2,
+    selection,
+    setComparing,
+    setImage1,
+    setImage2,
+    setSelection,
+  } = comparePageControl;
+
+  useEffect(() => {
+    if (image1 && !image2) {
+      setSelection(2);
+    }
+  }, [image1, image2]);
+
+  const boxSide = useWindowDimensions().width / 4;
+  const derivedStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        previewItem: {
+          height: boxSide - 5,
+          width: boxSide - 5,
+        },
+        galleryItem: { width: boxSide, height: boxSide },
+      }),
+    [boxSide]
+  );
+
+  return (
+    <Frame
+      menu={
+        <MenuButton
+          disabled={!image1 || !image2}
+          onPress={() => setComparing(true)}
+        >
+          <IconCompare style={FrameStyles.menuButtonIcon} />
+          <MenuText>Compare</MenuText>
+        </MenuButton>
+      }
+    >
+      <View style={styles.previewContainer}>
+        <Text>Selected photos:</Text>
+        <View style={styles.previewItemList}>
+          <PreviewItem
+            style={derivedStyles.previewItem}
+            selected={selection === 1}
+            image={image1}
+            onPress={() => setSelection(1)}
+          />
+          {image1 && (
+            <PreviewItem
+              style={derivedStyles.previewItem}
+              selected={selection === 2}
+              image={image2}
+              onPress={() => setSelection(2)}
+            />
+          )}
+        </View>
+      </View>
+      <Text>Select from the pictures below:</Text>
+      <View style={styles.gallery}>
+        {gallery.getPhotos().map((photo) => {
+          const selected =
+            (selection === 1 && image1 === photo) ||
+            (selection === 2 && image2 === photo);
+
+          return (
+            <PreviewItem
+              key={photo.uri}
+              style={{
+                ...derivedStyles.galleryItem,
+                ...(selected && styles.selected),
+              }}
+              onPress={() => {
+                switch (selection) {
+                  case 1:
+                    return setImage1(photo);
+                  case 2:
+                    return setImage2(photo);
+                }
+              }}
+              image={photo}
+            />
+          );
+        })}
+      </View>
+    </Frame>
   );
 };
 
